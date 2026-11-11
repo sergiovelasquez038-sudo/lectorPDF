@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models.dart';
 import '../navigation.dart';
 import '../services/annotations_store.dart';
+import '../services/error_log.dart';
 import '../services/library_store.dart';
 import '../services/pdf_text.dart';
 import '../services/read_aloud.dart';
@@ -89,10 +90,27 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
     // El visor se guarda para no recrearlo en cada actualización de pantalla.
     _viewer = _buildViewer();
     if (settings.keepScreenOn) SystemBridge.keepScreenOn(true);
+    ErrorLog.entries.addListener(_onAppError);
+  }
+
+  bool _errorShown = false;
+
+  /// Si algo falla al dibujar el PDF, ofrece el modo lectura.
+  void _onAppError() {
+    if (_errorShown || !mounted) return;
+    _errorShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showMessage(
+        'Este PDF no se pudo dibujar bien. Prueba el modo lectura.',
+        action: SnackBarAction(label: 'Modo lectura', onPressed: _openReflow),
+      );
+    });
   }
 
   @override
   void dispose() {
+    ErrorLog.entries.removeListener(_onAppError);
     _searcher.removeListener(_onSearchUpdate);
     _searcher.dispose();
     _searchCtrl.dispose();
@@ -111,6 +129,9 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         controller: controller,
         initialPageNumber: _initialPage,
         passwordProvider: _askPassword,
+        // Mide todas las páginas antes de dibujar: evita pantallas vacías
+        // con PDF que mezclan tamaños de página.
+        useProgressiveLoading: false,
         params: PdfViewerParams(
           backgroundColor: const Color(0xFFE4E4E4),
           maxScale: 8.0,

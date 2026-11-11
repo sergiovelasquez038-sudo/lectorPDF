@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../navigation.dart';
+import '../services/error_log.dart';
 import '../services/library_store.dart';
 import '../services/read_aloud.dart';
 import '../services/reader_settings.dart';
@@ -167,6 +169,35 @@ class SettingsScreen extends StatelessWidget {
               title: const Text('Permiso de archivos'),
               subtitle: const Text('Abre los ajustes de Android de esta app'),
               onTap: openAppSettings,
+            ),
+            ValueListenableBuilder<List<String>>(
+              valueListenable: ErrorLog.entries,
+              builder: (context, errors, _) {
+                if (errors.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle('Errores recientes'),
+                    for (final e in errors.take(5))
+                      ListTile(
+                        leading: const Icon(Icons.error_outline_rounded),
+                        title: Text(e, maxLines: 4, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13)),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.copy_rounded),
+                        label: const Text('Copiar errores'),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: errors.join('\n\n')));
+                          showMessage('Errores copiados.');
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SectionTitle('Acerca de'),
             const ListTile(

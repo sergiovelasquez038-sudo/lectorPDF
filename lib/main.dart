@@ -5,6 +5,7 @@ import 'models.dart';
 import 'navigation.dart';
 import 'screens/library_screen.dart';
 import 'services/annotations_store.dart';
+import 'services/error_log.dart';
 import 'services/library_store.dart';
 import 'services/read_aloud.dart';
 import 'services/reader_settings.dart';
@@ -13,6 +14,7 @@ import 'services/tts_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorLog.install();
   try {
     await pdfrxFlutterInitialize();
   } catch (e) {
