@@ -1,0 +1,76 @@
+# Compila el APK de Android automáticamente en GitHub (gratis).
+# Se ejecuta cada vez que subes cambios, o a mano desde la pestaña "Actions".
+name: Compilar APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Descomprimir el proyecto (si subiste el ZIP)
+        run: |
+          if [ -f lector_docs.zip ]; then
+            unzip -o lector_docs.zip -d .
+          fi
+          if [ ! -f pubspec.yaml ] && [ -f lector_docs/pubspec.yaml ]; then
+            cp -r lector_docs/. .
+          fi
+          test -f pubspec.yaml || { echo "No encuentro pubspec.yaml. Sube el ZIP o la carpeta del proyecto."; exit 1; }
+
+      - name: Instalar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generar los archivos de Android que faltan
+        run: |
+          flutter create --org com.sergio --project-name lector_docs --platforms=android .
+          # Versión mínima de Android: 7.0 (API 24)
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = maxOf(flutter.minSdkVersion, 24)/' android/app/build.gradle.kts
+          fi
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion Math.max(flutter.minSdkVersion, 24)/' android/app/build.gradle
+          fi
+
+      - name: Descargar paquetes
+        run: flutter pub get
+
+      - name: Pruebas rápidas
+        run: flutter test
+        continue-on-error: true
+
+      - name: Compilar APK
+        run: flutter build apk --release
+
+      - name: Preparar archivo
+        run: cp build/app/outputs/flutter-apk/app-release.apk Lector.apk
+
+      - name: Guardar APK en Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lector-APK
+          path: Lector.apk
+
+      - name: Publicar en "Releases" (para descargar desde el celular)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Lector v1.0.${{ github.run_number }}
+          files: Lector.apk

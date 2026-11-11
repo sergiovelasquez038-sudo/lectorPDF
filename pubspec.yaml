@@ -1,0 +1,33 @@
+name: lector_docs
+description: Lector de documentos PDF, EPUB, Word y TXT para Android, con lectura en voz alta.
+publish_to: 'none'
+version: 2.1.0+3
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Visor de PDF (motor PDFium, el mismo de Chrome)
+  pdfrx: ^2.12.0
+  # Permisos: "Acceso a todos los archivos" y notificaciones
+  permission_handler: ">=11.3.0 <14.0.0"
+  # Abrir EPUB y Word (son archivos ZIP por dentro)
+  archive: ^4.0.0
+  # Guardar progreso, favoritos, notas y ajustes
+  shared_preferences: ^2.3.0
+  # Lista de lectura que recuerda el párrafo exacto
+  scrollable_positioned_list: ^0.3.8
+  path: ^1.8.0
+  # Voces del teléfono (Google, Samsung, SherpaTTS…) para leer en voz alta
+  flutter_tts: ^4.2.0
+  # Compartir documentos y notas
+  share_plus: ">=11.0.0 <14.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
