@@ -993,7 +993,10 @@ class _TextReaderScreenState extends State<TextReaderScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 0, 16, 2),
-          child: ValueListenableBuilder<int>(
+          // Altura fija: sin ella el Slider se estira y tapa toda la pantalla.
+          child: SizedBox(
+            height: 52,
+            child: ValueListenableBuilder<int>(
             valueListenable: _current,
             builder: (context, cur, _) {
               final v = (_dragValue ?? cur.toDouble())
@@ -1022,6 +1025,7 @@ class _TextReaderScreenState extends State<TextReaderScreen> {
                 ],
               );
             },
+            ),
           ),
         ),
       ),

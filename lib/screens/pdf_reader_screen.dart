@@ -129,9 +129,6 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         controller: controller,
         initialPageNumber: _initialPage,
         passwordProvider: _askPassword,
-        // Mide todas las páginas antes de dibujar: evita pantallas vacías
-        // con PDF que mezclan tamaños de página.
-        useProgressiveLoading: false,
         params: PdfViewerParams(
           backgroundColor: const Color(0xFFE4E4E4),
           maxScale: 8.0,
@@ -725,7 +722,10 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-          child: Row(
+          // Altura fija: sin ella el Slider se estira y tapa toda la pantalla.
+          child: SizedBox(
+            height: 52,
+            child: Row(
             children: [
               Expanded(
                 child: Slider(
@@ -746,6 +746,7 @@ class _PdfReaderScreenState extends State<PdfReaderScreen> {
                 child: Text('$page / $_pageCount'),
               ),
             ],
+            ),
           ),
         ),
       ),
