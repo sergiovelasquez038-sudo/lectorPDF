@@ -16,6 +16,7 @@ ParsedDoc parseDocument(Uint8List bytes, DocType type) => switch (type) {
       DocType.docx => parseDocx(bytes),
       DocType.txt => parseTxt(bytes),
       DocType.pdf => throw UnsupportedError('Los PDF usan el visor de PDF'),
+      DocType.comic => throw UnsupportedError('Los manhua usan su propio lector'),
     };
 
 // ===================== TXT y Markdown =====================

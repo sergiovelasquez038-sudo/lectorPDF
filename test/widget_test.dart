@@ -70,4 +70,20 @@ void main() {
     expect(formatSpeed(1.25), '1.25x');
     expect(formatSpeed(0.8), '0.8x');
   });
+
+  test('ordena capítulos como una persona', () {
+    final names = ['Capítulo 10', 'Capítulo 2', 'Capítulo 1', 'Capítulo 2.5'];
+    names.sort(naturalCompare);
+    expect(names, ['Capítulo 1', 'Capítulo 2', 'Capítulo 2.5', 'Capítulo 10']);
+  });
+
+  test('carpeta de capítulo se guarda y se lee', () {
+    const d = DocItem(path: '/x/Mihon/Mi manhua/Cap 3', size: 24, modifiedMs: 1, isFolder: true);
+    final back = DocItem.fromJson(d.toJson());
+    expect(back.isFolder, true);
+    expect(back.type, DocType.comic);
+    expect(back.name, 'Cap 3');
+    expect(back.sizeLabel, '24 páginas');
+    expect(docTypeForPath('/x/capitulo.cbz'), DocType.comic);
+  });
 }

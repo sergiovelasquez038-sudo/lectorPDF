@@ -39,6 +39,15 @@ List<DocItem> _scanSync(List<String> extraRoots) {
   return out;
 }
 
+// Carpetas que suelen guardar manhua/manga (Mihon, Tachiyomi, Kotatsu…)
+// o con nombre de capítulo. Así no se confunden con las fotos del teléfono.
+final _comicPathRe = RegExp(
+    r'manhua|manhwa|manga|comic|cómic|webtoon|mihon|tachiyomi|kotatsu|komikku|mangayomi',
+    caseSensitive: false);
+final _chapterNameRe = RegExp(
+    r'cap[ií]tulo|chapter|\bch\.?\s*\d|\bcap\.?\s*\d|episod|\bep\.?\s*\d',
+    caseSensitive: false);
+
 void _walk(Directory dir, List<DocItem> out, Set<String> seen, int depth) {
   if (depth > 16) return;
 
@@ -48,6 +57,11 @@ void _walk(Directory dir, List<DocItem> out, Set<String> seen, int depth) {
   } catch (_) {
     return; // Carpeta protegida: la saltamos.
   }
+
+  final dirName = dir.path.substring(dir.path.lastIndexOf('/') + 1);
+  final comicContext = depth > 0 &&
+      (_comicPathRe.hasMatch(dir.path) || _chapterNameRe.hasMatch(dirName));
+  var images = 0;
 
   for (final e in entries) {
     final name = e.path.substring(e.path.lastIndexOf('/') + 1);
@@ -65,7 +79,12 @@ void _walk(Directory dir, List<DocItem> out, Set<String> seen, int depth) {
     } else if (e is File) {
       final dot = name.lastIndexOf('.');
       if (dot <= 0) continue;
-      final type = kExtensions[name.substring(dot).toLowerCase()];
+      final ext = name.substring(dot).toLowerCase();
+      if (comicContext && kImageExtensions.contains(ext)) {
+        images++;
+        continue;
+      }
+      final type = kExtensions[ext];
       if (type == null) continue;
       try {
         final st = e.statSync();
@@ -81,5 +100,19 @@ void _walk(Directory dir, List<DocItem> out, Set<String> seen, int depth) {
         }
       } catch (_) {}
     }
+  }
+
+  // Carpeta con las imágenes de un capítulo.
+  if (comicContext && images >= 3 && seen.add(dir.path)) {
+    var modified = DateTime.now().millisecondsSinceEpoch;
+    try {
+      modified = dir.statSync().modified.millisecondsSinceEpoch;
+    } catch (_) {}
+    out.add(DocItem(
+      path: dir.path,
+      size: images,
+      modifiedMs: modified,
+      isFolder: true,
+    ));
   }
 }

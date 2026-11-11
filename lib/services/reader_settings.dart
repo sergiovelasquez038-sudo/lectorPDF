@@ -25,6 +25,12 @@ class ReaderSettings extends ChangeNotifier {
   bool pdfHorizontal = false;
   bool keepScreenOn = false;
 
+  // Manhua y cómics
+  bool comicPaged = false; // false = tira vertical continua
+  bool comicRtl = false; // derecha a izquierda (manga japonés)
+  bool comicWhiteBg = false;
+  int comicAutoSpeed = 2; // 1 (lento) a 5 (rápido)
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _prefs = prefs;
@@ -36,6 +42,10 @@ class ReaderSettings extends ChangeNotifier {
     pdfNight = prefs.getBool('pdfNight') ?? false;
     pdfHorizontal = prefs.getBool('pdfHorizontal') ?? false;
     keepScreenOn = prefs.getBool('keepScreenOn') ?? false;
+    comicPaged = prefs.getBool('comicPaged') ?? false;
+    comicRtl = prefs.getBool('comicRtl') ?? false;
+    comicWhiteBg = prefs.getBool('comicWhiteBg') ?? false;
+    comicAutoSpeed = (prefs.getInt('comicAutoSpeed') ?? 2).clamp(1, 5).toInt();
   }
 
   Color get background => switch (theme) {
@@ -105,6 +115,30 @@ class ReaderSettings extends ChangeNotifier {
   void setKeepScreenOn(bool v) {
     keepScreenOn = v;
     _prefs?.setBool('keepScreenOn', v);
+    notifyListeners();
+  }
+
+  void setComicPaged(bool v) {
+    comicPaged = v;
+    _prefs?.setBool('comicPaged', v);
+    notifyListeners();
+  }
+
+  void setComicRtl(bool v) {
+    comicRtl = v;
+    _prefs?.setBool('comicRtl', v);
+    notifyListeners();
+  }
+
+  void setComicWhiteBg(bool v) {
+    comicWhiteBg = v;
+    _prefs?.setBool('comicWhiteBg', v);
+    notifyListeners();
+  }
+
+  void setComicAutoSpeed(int v) {
+    comicAutoSpeed = v.clamp(1, 5).toInt();
+    _prefs?.setInt('comicAutoSpeed', comicAutoSpeed);
     notifyListeners();
   }
 }

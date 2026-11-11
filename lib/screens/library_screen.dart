@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../models.dart';
 import '../navigation.dart' as nav;
+import '../services/comic_source.dart';
 import '../services/extractors.dart';
 import '../services/library_store.dart';
 import '../services/tts_service.dart';
@@ -20,7 +21,8 @@ enum LibFilter {
   pdf('PDF'),
   epub('EPUB'),
   docx('Word'),
-  txt('Texto');
+  txt('Texto'),
+  comic('Manhua');
 
   const LibFilter(this.label);
   final String label;
@@ -32,6 +34,7 @@ enum LibFilter {
         LibFilter.epub => d.type == DocType.epub,
         LibFilter.docx => d.type == DocType.docx,
         LibFilter.txt => d.type == DocType.txt,
+        LibFilter.comic => d.type == DocType.comic,
       };
 }
 
@@ -275,7 +278,7 @@ class _TypeBadge extends StatelessWidget {
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w800,
-          fontSize: width * 0.24,
+          fontSize: width * (type == DocType.comic ? 0.18 : 0.24),
           letterSpacing: 0.3,
         ),
       ),
@@ -304,7 +307,7 @@ class _DocTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '${doc.folder} · ${formatSize(doc.size)} · ${formatDate(doc.modified)}',
+            '${doc.folder} · ${doc.sizeLabel} · ${formatDate(doc.modified)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: muted),
@@ -357,7 +360,7 @@ void _showInfo(BuildContext context, DocItem doc) {
           children: [
             Text(doc.name, style: Theme.of(ctx).textTheme.titleLarge),
             const SizedBox(height: 12),
-            Text('${doc.type.label} · ${formatSize(doc.size)} · '
+            Text('${doc.type.label} · ${doc.sizeLabel} · '
                 'modificado ${formatDate(doc.modified)}'),
             const SizedBox(height: 8),
             SelectableText(doc.path,
@@ -390,15 +393,16 @@ void _showInfo(BuildContext context, DocItem doc) {
               ],
             ),
             const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.share_rounded),
-              title: const Text('Compartir'),
-              onTap: () {
-                Navigator.pop(ctx);
-                SharePlus.instance.share(ShareParams(files: [XFile(doc.path)]));
-              },
-            ),
+            if (!doc.isFolder)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.share_rounded),
+                title: const Text('Compartir'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  SharePlus.instance.share(ShareParams(files: [XFile(doc.path)]));
+                },
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.drive_file_rename_outline_rounded),
@@ -492,6 +496,7 @@ class _DocCover extends StatelessWidget {
   final DocItem doc;
 
   static final Map<String, Future<Uint8List?>> _epubCovers = {};
+  static final Map<String, Future<Uint8List?>> _comicCovers = {};
 
   Widget _fallback(Color color) => Container(
         color: color.withValues(alpha: 0.12),
@@ -503,7 +508,9 @@ class _DocCover extends StatelessWidget {
                   ? Icons.auto_stories_rounded
                   : doc.type == DocType.docx
                       ? Icons.description_rounded
-                      : Icons.notes_rounded,
+                      : doc.type == DocType.comic
+                          ? Icons.collections_bookmark_rounded
+                          : Icons.notes_rounded,
           color: color,
           size: 40,
         ),
@@ -540,6 +547,23 @@ class _DocCover extends StatelessWidget {
             return Image.memory(
               bytes,
               fit: BoxFit.cover,
+              cacheWidth: 300,
+              errorBuilder: (context, error, stack) => _fallback(color),
+            );
+          },
+        );
+      case DocType.comic:
+        final future =
+            _comicCovers.putIfAbsent(doc.path, () => loadComicCover(doc));
+        return FutureBuilder<Uint8List?>(
+          future: future,
+          builder: (context, snap) {
+            final bytes = snap.data;
+            if (bytes == null) return _fallback(color);
+            return Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
               cacheWidth: 300,
               errorBuilder: (context, error, stack) => _fallback(color),
             );

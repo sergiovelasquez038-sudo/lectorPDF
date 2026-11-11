@@ -142,17 +142,26 @@ class LibraryStore extends ChangeNotifier {
   Future<String?> renameDoc(DocItem doc, String newName) async {
     final clean = newName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
     if (clean.isEmpty) return 'Escribe un nombre.';
-    final ext = p.extension(doc.path);
+    final ext = doc.isFolder ? '' : p.extension(doc.path);
     final newPath = p.join(p.dirname(doc.path), '$clean$ext');
     if (newPath == doc.path) return null;
-    if (File(newPath).existsSync()) return 'Ya existe un archivo con ese nombre.';
+    if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
+      return 'Ya existe un archivo con ese nombre.';
+    }
     try {
-      await File(doc.path).rename(newPath);
+      if (doc.isFolder) {
+        await Directory(doc.path).rename(newPath);
+      } else {
+        await File(doc.path).rename(newPath);
+      }
     } catch (e) {
       return 'No se pudo cambiar el nombre.';
     }
     final updated = DocItem(
-        path: newPath, size: doc.size, modifiedMs: doc.modifiedMs);
+        path: newPath,
+        size: doc.size,
+        modifiedMs: doc.modifiedMs,
+        isFolder: doc.isFolder);
     docs = [for (final d in docs) d.path == doc.path ? updated : d];
     final prog = progress.remove(doc.path);
     if (prog != null) progress[newPath] = prog;
@@ -170,8 +179,13 @@ class LibraryStore extends ChangeNotifier {
   /// Borra el archivo del teléfono.
   Future<String?> deleteDoc(DocItem doc) async {
     try {
-      final f = File(doc.path);
-      if (f.existsSync()) await f.delete();
+      if (doc.isFolder) {
+        final d = Directory(doc.path);
+        if (d.existsSync()) await d.delete(recursive: true);
+      } else {
+        final f = File(doc.path);
+        if (f.existsSync()) await f.delete();
+      }
     } catch (e) {
       return 'No se pudo eliminar el archivo.';
     }

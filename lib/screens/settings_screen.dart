@@ -144,6 +144,30 @@ class SettingsScreen extends StatelessWidget {
               value: settings.keepScreenOn,
               onChanged: settings.setKeepScreenOn,
             ),
+            const SectionTitle('Manhua y cómics'),
+            SwitchListTile(
+              title: const Text('Leer por páginas'),
+              subtitle: const Text('Si está apagado: tira vertical continua (manhua, webtoon)'),
+              value: settings.comicPaged,
+              onChanged: settings.setComicPaged,
+            ),
+            SwitchListTile(
+              title: const Text('Derecha a izquierda (manga japonés)'),
+              value: settings.comicRtl,
+              onChanged: settings.setComicRtl,
+            ),
+            SwitchListTile(
+              title: const Text('Fondo blanco'),
+              value: settings.comicWhiteBg,
+              onChanged: settings.setComicWhiteBg,
+            ),
+            const ListTile(
+              leading: Icon(Icons.info_outline_rounded),
+              title: Text('Formatos de manhua'),
+              subtitle: Text(
+                  'CBZ, carpetas de capítulos (como las de Mihon o Tachiyomi), '
+                  'EPUB de imágenes y PDF.'),
+            ),
             const SectionTitle('PDF'),
             SwitchListTile(
               title: const Text('Modo noche'),
@@ -202,7 +226,7 @@ class SettingsScreen extends StatelessWidget {
             const SectionTitle('Acerca de'),
             const ListTile(
               leading: Icon(Icons.menu_book_rounded),
-              title: Text('Lector 2.1'),
+              title: Text('Lector 2.2'),
               subtitle: Text('PDF, EPUB, Word y TXT con lectura en voz alta'),
             ),
           ],

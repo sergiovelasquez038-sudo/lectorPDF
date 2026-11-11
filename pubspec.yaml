@@ -1,7 +1,7 @@
 name: lector_docs
 description: Lector de documentos PDF, EPUB, Word y TXT para Android, con lectura en voz alta.
 publish_to: 'none'
-version: 2.1.0+3
+version: 2.2.0+4
 
 environment:
   sdk: ^3.5.0

@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models.dart';
 import '../navigation.dart';
 import '../services/annotations_store.dart';
+import '../services/comic_source.dart';
 import '../services/extractors.dart';
 import '../services/library_store.dart';
 import '../services/pdf_text.dart';
@@ -17,6 +18,7 @@ import '../services/system_bridge.dart';
 import '../services/text_tools.dart';
 import '../widgets/read_aloud_bar.dart';
 import '../widgets/voice_picker_sheet.dart';
+import 'comic_reader_screen.dart';
 import 'settings_screen.dart';
 
 /// Lector para EPUB, Word, TXT y el "modo lectura" de los PDF:
@@ -151,10 +153,37 @@ class _TextReaderScreenState extends State<TextReaderScreen> {
     try {
       final d = await loadTextDocument(widget.doc.path, widget.doc.type);
       if (!mounted) return;
+      // Casi sin texto: probablemente es un manga o manhua en EPUB.
+      if (widget.doc.type == DocType.epub &&
+          d.blocks.length < 8 &&
+          await _openAsComicIfImages(minPages: 5)) {
+        return;
+      }
+      if (!mounted) return;
       setState(() => _setDoc(d));
       _save();
     } catch (e) {
+      if (!mounted) return;
+      // Un EPUB hecho solo de imágenes es un manga o manhua: se abre como tal.
+      if (widget.doc.type == DocType.epub &&
+          await _openAsComicIfImages(minPages: 1)) {
+        return;
+      }
       if (mounted) setState(() => _error = e);
+    }
+  }
+
+  /// Abre el EPUB en el lector de manhua si tiene al menos [minPages] imágenes.
+  Future<bool> _openAsComicIfImages({required int minPages}) async {
+    try {
+      final pages = await loadComicPages(widget.doc);
+      if (!mounted || pages.length < minPages) return false;
+      Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+        builder: (_) => ComicReaderScreen(doc: widget.doc),
+      ));
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

@@ -238,6 +238,7 @@ class MainActivity : FlutterActivity() {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ".docx"
         "text/markdown" -> ".md"
         "text/plain" -> ".txt"
+        "application/vnd.comicbook+zip", "application/x-cbz" -> ".cbz"
         else -> ""
     }
 }
