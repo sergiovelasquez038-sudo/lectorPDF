@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Descomprimir el proyecto (si subiste el ZIP)
         run: |
@@ -27,7 +27,7 @@ jobs:
           test -f pubspec.yaml || { echo "No encuentro pubspec.yaml. Sube el ZIP o la carpeta del proyecto."; exit 1; }
 
       - name: Instalar Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -42,15 +42,25 @@ jobs:
         run: |
           flutter create --org com.sergio --project-name lector_docs --platforms=android .
           # Versión mínima de Android: 7.0 (API 24)
+          # Algunas librerías nuevas piden compilar con Android 37.
           if [ -f android/app/build.gradle.kts ]; then
             sed -i 's/minSdk = flutter.minSdkVersion/minSdk = maxOf(flutter.minSdkVersion, 24)/' android/app/build.gradle.kts
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = maxOf(flutter.compileSdkVersion, 37)/' android/app/build.gradle.kts
           fi
           if [ -f android/app/build.gradle ]; then
             sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion Math.max(flutter.minSdkVersion, 24)/' android/app/build.gradle
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion Math.max(flutter.compileSdkVersion, 37)/' android/app/build.gradle
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = Math.max(flutter.compileSdkVersion, 37)/' android/app/build.gradle
           fi
+          grep -q suppressUnsupportedCompileSdk android/gradle.properties 2>/dev/null || echo "android.suppressUnsupportedCompileSdk=37" >> android/gradle.properties
+          grep -n "compileSdk\|minSdk" android/app/build.gradle* || true
 
       - name: Descargar paquetes
         run: flutter pub get
+
+      - name: Revisar el código
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib
+        continue-on-error: true
 
       - name: Pruebas rápidas
         run: flutter test
